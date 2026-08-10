@@ -1,0 +1,6 @@
+build/
+harness/results/
+qemu_*.core
+# Game data is the player's, never the repo's.
+game/libNOVA3_neon.so
+game/*.obb
