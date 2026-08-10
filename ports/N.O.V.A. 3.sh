@@ -129,6 +129,16 @@ fi
 export LD_LIBRARY_PATH="$GAMEDIR/libs.armhf${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 export LOADER_TRACE=1
+# muOS curates its SDL controller mappings so the logical buttons already
+# match the printed labels; the layout this port's key table was settled
+# against (the ArkOS family) lands double-swapped there (RG 40XX-H report -
+# the menu tap on a dead A button). The default follows the CFW; the
+# variable still overrides either way.
+case "$(echo "${CFW_NAME:-}" | tr 'A-Z' 'a-z')" in
+  muos) _face_default=xbox ;;
+  *)    _face_default=nintendo ;;
+esac
+export NOVA3_FACE_LAYOUT="${NOVA3_FACE_LAYOUT:-$_face_default}"
 # Aspect-correct scaling for panels that are not the R36S's 640x480: fit
 # (default) keeps 4:3 and letterboxes, stretch fills the panel, integer scales
 # by a whole number. On a real 640x480 panel this is identity.

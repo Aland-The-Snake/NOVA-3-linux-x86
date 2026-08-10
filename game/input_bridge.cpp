@@ -334,6 +334,40 @@ static const struct {
     { SDL_CONTROLLER_BUTTON_START,         KEY_START       },
 };
 
+/*
+ * The face buttons, translated by layout before anything reads them.
+ *
+ * The kButtons table and the menu tap were settled on the ArkOS family, whose
+ * SDL mappings deliver the layout this file was authored against. muOS curates
+ * its mappings so the logical buttons already match the printed labels, and
+ * the same table lands double-swapped there - the RG 40XX-H report is exact:
+ * the menu tap lives on SDL A, physical A arrives as SDL B, and "the A button
+ * doesn't seem to do anything". Same trait, same fix as the sibling ports:
+ * the launcher sets the default by CFW, the variable overrides either way.
+ *
+ * One translation point, before the event is examined: every branch below
+ * (the menu tap, the arrows, the table) sees the translated button, so the
+ * swap cannot miss a callsite.
+ */
+static Uint8 face_translate(Uint8 b)
+{
+    static int swap = -1;
+    if (swap < 0) {
+        const char *v = port_getenv("FACE_LAYOUT");
+        swap = (v && strcasecmp(v, "xbox") == 0) ? 1 : 0;
+        trace("input: face layout %s", swap ? "xbox" : "nintendo");
+    }
+    if (!swap)
+        return b;
+    switch (b) {
+    case SDL_CONTROLLER_BUTTON_A: return SDL_CONTROLLER_BUTTON_B;
+    case SDL_CONTROLLER_BUTTON_B: return SDL_CONTROLLER_BUTTON_A;
+    case SDL_CONTROLLER_BUTTON_X: return SDL_CONTROLLER_BUTTON_Y;
+    case SDL_CONTROLLER_BUTTON_Y: return SDL_CONTROLLER_BUTTON_X;
+    default:                      return b;
+    }
+}
+
 static float axis_norm(Sint16 v)
 {
     /* A dead zone wide enough for a worn analogue stick. Below it the value is
@@ -361,27 +395,28 @@ bool android_input_event(const SDL_Event *event)
     case SDL_CONTROLLERBUTTONDOWN:
     case SDL_CONTROLLERBUTTONUP: {
         bool down = event->type == SDL_CONTROLLERBUTTONDOWN;
+        Uint8 btn = face_translate(btn);
 
-        if (event->cbutton.button == SDL_CONTROLLER_BUTTON_BACK) {
+        if (btn == SDL_CONTROLLER_BUTTON_BACK) {
             send_key(select_keycode(), down);
             return true;
         }
         /* SWEEP: walking lives on the stick now, so two arrows can carry the
          * remaining throw-item candidates while menus keep their real codes. */
         if (!nova3_is_main_menu() &&
-            event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_DOWN) {
+            btn == SDL_CONTROLLER_BUTTON_DPAD_DOWN) {
             send_key(109, down);     /* quick weapon change, hardware-settled */
             return true;
         }
         /* The two codes still without a known effect ride the free arrows -
          * one of them should be reload. */
         if (!nova3_is_main_menu() &&
-            event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_LEFT) {
+            btn == SDL_CONTROLLER_BUTTON_DPAD_LEFT) {
             send_key(122, down);
             return true;
         }
         if (!nova3_is_main_menu() &&
-            event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_RIGHT) {
+            btn == SDL_CONTROLLER_BUTTON_DPAD_RIGHT) {
             send_key(99, down);  /* reload, hardware-settled */
             return true;
         }
@@ -389,7 +424,7 @@ bool android_input_event(const SDL_Event *event)
          * the forward key held (its L3 case and its double-tap-up case both
          * spell it that way); the up arrow now does the same, since the
          * stick took over plain walking. In menus it stays a plain up. */
-        if (event->cbutton.button == SDL_CONTROLLER_BUTTON_DPAD_UP) {
+        if (btn == SDL_CONTROLLER_BUTTON_DPAD_UP) {
             if (nova3_is_main_menu()) {
                 send_key(KEY_DPAD_UP, down);
             } else {
@@ -402,13 +437,13 @@ bool android_input_event(const SDL_Event *event)
             return true;
         }
         /* Menus are touch-first; A is the finger. In play it stays a key. */
-        if (event->cbutton.button == SDL_CONTROLLER_BUTTON_A &&
+        if (btn == SDL_CONTROLLER_BUTTON_A &&
             nova3_is_main_menu()) {
             android_input_cursor_press(down);
             return true;
         }
         for (unsigned i = 0; i < sizeof(kButtons) / sizeof(kButtons[0]); i++) {
-            if (kButtons[i].button == event->cbutton.button) {
+            if (kButtons[i].button == btn) {
                 send_key(kButtons[i].code, down);
                 break;
             }

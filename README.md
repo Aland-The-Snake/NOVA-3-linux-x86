@@ -85,5 +85,13 @@ Known and honest about it:
   unidentified.
 - The audio mixer logs OpenSL buffer underruns ("device draining at 100%")
   while sounding correct on the device. The watermark has not been retuned.
-- Screenshots and cover art are placeholders until gameplay captures from
-  hardware replace them.
+
+## Tested devices
+
+| Device | CFW | Result |
+|---|---|---|
+| R36S | ArkOS-based | Developed and tested here — campaign playable |
+| RG35XXH | Knulli Gladiator II | Works great (community report; first load is slow — it is a big game) |
+
+Reports from other devices are welcome: open an issue with device, CFW and
+version, and `ports/nova3/log.txt` attached.
