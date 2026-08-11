@@ -39,6 +39,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "port_version.h"
 #include "so_util.h"
 #include "khronos/gles2.h"
 
@@ -173,12 +174,21 @@ extern "C" int so_after_relocate(so_module *mod)
 
 int main(int argc, char **argv)
 {
+    /* The launcher asks `nova3 --version` to name the build in the log; the
+     * field reports on v1.0.0/v1.0.1 all say "vunknown" because this answer
+     * was never wired. Before anything else: the loader must not start over
+     * a version query. */
+    if (argc >= 2 && strcmp(argv[1], "--version") == 0) {
+        printf("%s\n", NOVA3_PORT_VERSION);
+        return 0;
+    }
+
     /* Unbuffered from the first line: the log is the only diagnostic that
      * leaves the console, and a crash must not take it with it. */
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
 
-    trace("N.O.V.A. 3 port (bring-up)");
+    trace("N.O.V.A. 3 port v%s", NOVA3_PORT_VERSION);
 
     if (argc < 2) {
         fprintf(stderr,

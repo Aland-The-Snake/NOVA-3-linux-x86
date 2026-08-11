@@ -7,6 +7,6 @@
 #ifndef NOVA3_PORT_VERSION_H
 #define NOVA3_PORT_VERSION_H
 
-#define NOVA3_PORT_VERSION "1.0.1"
+#define NOVA3_PORT_VERSION "1.0.2"
 
 #endif /* NOVA3_PORT_VERSION_H */

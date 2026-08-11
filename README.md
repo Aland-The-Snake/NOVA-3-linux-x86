@@ -45,14 +45,20 @@ player who works out what it does can say so.
 
 Menu screens are touch-first, so the port raises a pointer there
 automatically — no modifier to hold. The engine itself is asked whether it is
-in a menu, so the switch happens on its terms, not on a guess:
+in a menu, so the switch happens on its terms, not on a guess.
+
+**The one thing to know**: menus work like a touchscreen, not like a console
+UI. Move the pointer over a button with the **right stick** and tap it
+with **A**. A only acts on what is under the pointer — if the pointer is
+parked in a corner, A looks dead. R3 answers the engine's own "accept", which
+is why it seems to select things A doesn't.
 
 | Control (in menus) | Action |
 |---|---|
 | Right stick | Move the pointer |
 | A, L2 or R2 | Tap at the pointer |
 | D-pad | Menu navigation |
-| Select | Accept |
+| Select / R3 | Accept (the engine's own) |
 
 ### Tuning (launcher environment variables)
 

@@ -129,16 +129,15 @@ fi
 export LD_LIBRARY_PATH="$GAMEDIR/libs.armhf${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
 export LOADER_TRACE=1
-# muOS curates its SDL controller mappings so the logical buttons already
-# match the printed labels; the layout this port's key table was settled
-# against (the ArkOS family) lands double-swapped there (RG 40XX-H report -
-# the menu tap on a dead A button). The default follows the CFW; the
-# variable still overrides either way.
-case "$(echo "${CFW_NAME:-}" | tr 'A-Z' 'a-z')" in
-  muos) _face_default=xbox ;;
-  *)    _face_default=nintendo ;;
-esac
-export NOVA3_FACE_LAYOUT="${NOVA3_FACE_LAYOUT:-$_face_default}"
+# Face layout. v1.0.1 shipped a muOS-follows-CFW default here on a wrong
+# diagnosis: the "A does nothing, R3 selects" reports turned out to be the
+# port's own menu paradigm (right stick moves a pointer, A taps it, R3 is
+# the engine's accept) showing up identically on every CFW - a dArkOS
+# report matched the muOS one word for word, and the muOS field log shows
+# the swap moving the menu tap OFF the button players actually press. So
+# the default is the settled table everywhere; the variable remains for
+# a handheld that genuinely letters its buttons the other way.
+export NOVA3_FACE_LAYOUT="${NOVA3_FACE_LAYOUT:-nintendo}"
 # Aspect-correct scaling for panels that are not the R36S's 640x480: fit
 # (default) keeps 4:3 and letterboxes, stretch fills the panel, integer scales
 # by a whole number. On a real 640x480 panel this is identity.
