@@ -395,7 +395,7 @@ bool android_input_event(const SDL_Event *event)
     case SDL_CONTROLLERBUTTONDOWN:
     case SDL_CONTROLLERBUTTONUP: {
         bool down = event->type == SDL_CONTROLLERBUTTONDOWN;
-        Uint8 btn = face_translate(btn);
+        Uint8 btn = face_translate(event->cbutton.button);
 
         if (btn == SDL_CONTROLLER_BUTTON_BACK) {
             send_key(select_keycode(), down);

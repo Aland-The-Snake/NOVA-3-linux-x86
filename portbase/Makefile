@@ -55,7 +55,8 @@ OBJDIR  := build/obj
 PKGS := sdl2 zlib libzip
 
 OPT  ?= -O2 -g
-WARN := -Wall -Wextra -Wno-unused-parameter -Werror=return-type
+WARN := -Wall -Wextra -Wno-unused-parameter -Werror=return-type \
+        -Winit-self -Werror=init-self -Werror=uninitialized
 
 # thunks/libc/generated holds the bionic export tables produced by
 # tools/generate_libc.sh. They are checked in because the build image has no
