@@ -214,6 +214,27 @@ static Uint32 g_right_centred_at;
 static long  g_input_ticks;
 
 /*
+ * Sprint, and how to stop it.
+ *
+ * The engine has no "stop sprinting" input: its gesture is touchEvent(100)
+ * and the sprint lasts as long as FORWARD stays held. On a phone that ends by
+ * itself, because forward is a finger on a virtual stick. Here the left stick
+ * walks by becoming the forward key, so a player who taps the up arrow while
+ * walking is holding forward continuously and the sprint never ends - two
+ * field reports, on different firmwares, both said the pause menu was the only
+ * way out. Releasing the stick does end it, which is why it never showed up in
+ * testing here.
+ *
+ * So the arrow is a switch, and turning it off means saying what the engine is
+ * waiting for: forward, released. The stick keeps reporting its real position;
+ * the release is a few frames of forward suppressed on the way out, after
+ * which walking resumes on its own.
+ */
+static bool g_sprinting;
+static bool g_arrow_forward;
+static int  g_forward_suppress;
+
+/*
  * The left stick walks by BECOMING the dpad. nativeSetPowerALeftJoystick is
  * exported but nothing in the game's own Java ever calls it, and on hardware
  * feeding it moved nothing: movement in this engine is the four dpad
@@ -231,11 +252,22 @@ static void stick_as_dpad(void)
     for (int i = 0; i < 4; i++) {
         float a = lanes[i].positive ? lanes[i].v : -lanes[i].v;
         bool want = held[i] ? (a > 0.30f) : (a > 0.45f);
+        /* Lane 0 is forward, and the sprint switch borrows it: while the
+         * release is in flight the stick's own position does not matter. */
+        if (i == 0 && g_forward_suppress > 0)
+            want = false;
         if (want != held[i]) {
             held[i] = want;
             send_key(lanes[i].code, want);
         }
     }
+    if (g_forward_suppress > 0)
+        g_forward_suppress--;
+    /* Forward genuinely let go - by the stick and by the arrow - is what ends
+     * a sprint on its own, so the switch has to agree or the next tap would
+     * read as "stop" when the player means "go". */
+    if (g_sprinting && !held[0] && !g_arrow_forward && g_forward_suppress == 0)
+        g_sprinting = false;
 }
 
 static void push_sticks(void)
@@ -427,13 +459,26 @@ bool android_input_event(const SDL_Event *event)
         if (btn == SDL_CONTROLLER_BUTTON_DPAD_UP) {
             if (nova3_is_main_menu()) {
                 send_key(KEY_DPAD_UP, down);
-            } else {
-                if (down && g_touch_event) {
+                return true;
+            }
+            if (down && g_sprinting) {
+                /* Second tap: stop. The engine is waiting for forward to be
+                 * let go, and the stick will not do it, so this press says it
+                 * instead - and walks nowhere itself. */
+                g_sprinting = false;
+                g_forward_suppress = 8;
+                trace("input: sprint off (forward released for 8 frames)");
+                return true;
+            }
+            if (down) {
+                if (g_touch_event) {
                     trace("input: touch action=100 (sprint)");
                     g_touch_event(g_env, NULL, 100, 0, 0, 0);
                 }
-                send_key(KEY_DPAD_UP, down);
+                g_sprinting = true;
             }
+            g_arrow_forward = down;
+            send_key(KEY_DPAD_UP, down);
             return true;
         }
         /* Menus are touch-first; A is the finger. In play it stays a key. */
@@ -442,12 +487,28 @@ bool android_input_event(const SDL_Event *event)
             android_input_cursor_press(down);
             return true;
         }
+        /*
+         * Every button, named by its SDL index, mapped or not.
+         *
+         * A field report said a button "does nothing" and the log could not
+         * settle it: an index this table has no row for produced no line at
+         * all, so a firmware whose pad reports different indices looked
+         * exactly like a firmware whose engine ignores the key. One line per
+         * press ends that guess - it is what the sibling ports already do.
+         */
+        bool mapped = false;
         for (unsigned i = 0; i < sizeof(kButtons) / sizeof(kButtons[0]); i++) {
             if (kButtons[i].button == btn) {
+                trace("input: controller button=%u %s -> key %d",
+                      (unsigned int)btn, down ? "down" : "up", kButtons[i].code);
                 send_key(kButtons[i].code, down);
+                mapped = true;
                 break;
             }
         }
+        if (!mapped)
+            trace("input: controller button=%u %s -> UNMAPPED (nothing sent)",
+                  (unsigned int)btn, down ? "down" : "up");
         return true;
     }
 
