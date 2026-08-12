@@ -92,6 +92,20 @@ Known and honest about it:
 - The audio mixer logs OpenSL buffer underruns ("device draining at 100%")
   while sounding correct on the device. The watermark has not been retuned.
 
+## ROCKNIX
+
+Set the device's GPU driver to **libmali** (ROCKNIX's own setting; `gpudriver`
+reports the current one). The port has been confirmed running that way on an
+RG DS.
+
+In **panfrost** mode it now reaches a live GL context — earlier releases could
+not, because the port's bundled libraries shadowed what Mesa's driver needed
+and glvnd then loaded no driver at all — but it renders black and crashes
+shortly after. That is a fixed-function GLES 1.1 path on Mesa/Panfrost, which
+is a different problem from this port's; the crash lands on an address that is
+really the value of `GL_NEAREST`, so somewhere a call goes through what the
+engine stored as an enum. Recorded here in case anyone wants to pick it up.
+
 ## Tested devices
 
 | Device | CFW | Result |
