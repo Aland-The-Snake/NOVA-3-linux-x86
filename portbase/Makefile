@@ -46,6 +46,11 @@ PORTBASE ?= .
 
 ARCH       ?= arm-linux-gnueabihf
 CROSS      ?= $(ARCH)-
+ifneq ($(ARCH),x86_64-linux-gnu)
+CROSS      ?= $(ARCH)-
+else
+CROSS      ?=
+endif
 CXX        := $(CROSS)g++
 PKG_CONFIG ?= $(CROSS)pkg-config
 
