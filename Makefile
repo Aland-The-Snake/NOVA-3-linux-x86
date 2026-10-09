@@ -28,3 +28,23 @@ libs: $(TARGET)
 	tools/check_glibc_floor.sh $(TARGET) build/libs.armhf
 
 .PHONY: libs
+
+# ========================================================================
+# Milestone M1: x86_64 Linux native build target
+# ========================================================================
+# Keep the ARM handheld build as the default, but allow an explicit native
+# x86_64 build for testing the wrapper and loader without disturbing the
+# existing ARM target. The portbase Makefile already supports ARCH override.
+#
+# This is the smallest verifiable x86_64 step:
+# - builds the native wrapper (portbase + game code) for x86_64
+# - does NOT claim the ARM32 game library is x86_64-compatible
+# - establishes the build infrastructure for later milestones
+#
+# Usage:  make x86_64
+# Verify: file build/nova3
+#         Expected: ELF 64-bit LSB pie executable, x86-64
+#
+.PHONY: x86_64
+x86_64:
+	$(MAKE) ARCH=x86_64-linux-gnu PORT_NAME=$(PORT_NAME) ENV_PREFIX=$(ENV_PREFIX) PORTBASE=$(PORTBASE)
